@@ -20,6 +20,7 @@ SCREEN_TITLE = "Sprite Rooms Example"
 
 MOVEMENT_SPEED = 5
 
+print("hellooooo1235345")
 
 class Room:
     """
