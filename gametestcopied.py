@@ -9,6 +9,7 @@ python -m arcade.examples.sprite_rooms
 
 import arcade
 import os
+import math
 
 SPRITE_SCALING = 0.5
 SPRITE_NATIVE_SIZE = 128
@@ -20,7 +21,6 @@ SCREEN_TITLE = "Sprite Rooms Example"
 
 MOVEMENT_SPEED = 5
 
-print("hellooooo1235345")
 
 class Room:
     """
@@ -47,6 +47,7 @@ def setup_room_1():
     """ Set up the game and initialize the variables. """
     # Sprite lists
     room.wall_list = arcade.SpriteList()
+    room.sapling_list = arcade.SpriteList() # List for saplings
 
     # -- Set up the walls
     # Create bottom and top row of boxes
@@ -78,7 +79,11 @@ def setup_room_1():
     wall.bottom = 5 * SPRITE_SIZE
     room.wall_list.append(wall)
 
-    # If you want coins or monsters in a level, then add that code here.
+    # Add the sapling
+    mushroom = arcade.Sprite(":resources:images/tiles/mushroomRed.png", SPRITE_SCALING)
+    mushroom.center_x = 7 * SPRITE_SIZE
+    mushroom.center_y = 3 * SPRITE_SIZE
+    room.sapling_list.append(mushroom)
 
     # Load the background image for this level.
     room.background = arcade.load_texture(":resources:images/backgrounds/"
@@ -199,6 +204,9 @@ class MyGame(arcade.Window):
         # If you have coins or monsters, then copy and modify the line
         # above for each list.
 
+        # Draw saplings
+        self.rooms[self.current_room].sapling_list.draw()
+
         self.player_list.draw()
 
     def on_key_press(self, key, modifiers):
@@ -221,12 +229,46 @@ class MyGame(arcade.Window):
         elif key == arcade.key.LEFT or key == arcade.key.RIGHT:
             self.player_sprite.change_x = 0
 
+    def on_mouse_press(self, x, y, button, modifiers):
+        # Check distance between player and all saplings
+        saplings_hit = []
+        for sapling in self.rooms[self.current_room].sapling_list:
+            distance_to_player = math.sqrt((self.player_sprite.center_x - sapling.center_x) ** 2 + (self.player_sprite.center_y - sapling.center_y) ** 2)
+            distance_to_click = math.sqrt((x - sapling.center_x) ** 2 + (y - sapling.center_y) ** 2)
+
+            # Check if sapling is within interaction range of the player and click
+            if distance_to_player < 80 and distance_to_click < 50:  # Adjust these values to tweak proximity
+                saplings_hit.append(sapling)
+
+        if saplings_hit:
+            print("Sapling interacted with!")
+            for sapling in saplings_hit:
+                if not hasattr(sapling, "state"):
+                    sapling.state = "default"
+
+                # Change sapling state based on interaction
+                if sapling.state == "default":
+                    sapling.state = "watered"
+                    #sapling.texture = arcade.load_texture("path_to_watered_sapling_image.png")
+                elif sapling.state == "watered":
+                    sapling.state = "chopped"
+                    #sapling.texture = arcade.load_texture("path_to_chopped_sapling_image.png")
+
+                # Remove sapling if chopped
+                if sapling.state == "chopped":
+                    sapling.remove_from_sprite_lists()
+
     def on_update(self, delta_time):
         """ Movement and game logic """
 
         # Call update on all sprites (The sprites don't do much in this
         # example though.)
         self.physics_engine.update()
+
+        saplings_hit = arcade.check_for_collision_with_list(self.player_sprite, self.rooms[self.current_room].sapling_list)
+
+        if saplings_hit:
+            print("Player is near a sapling! Press a key to interact.")
 
         # Do some logic here to figure out what room we are in, and if we need to go
         # to a different room.
