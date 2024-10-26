@@ -99,8 +99,8 @@ def setup_room_1():
 
     # Add the sapling
     mushroom = arcade.Sprite(":resources:images/tiles/mushroomRed.png", SPRITE_SCALING)
-    mushroom.center_x = 7 * SPRITE_SIZE
-    mushroom.center_y = 3 * SPRITE_SIZE
+    mushroom.center_x = 7 * SPRITE_SIZE + 30
+    mushroom.center_y = 3 * SPRITE_SIZE - 15
     room.sapling_list.append(mushroom)
 
     # Load the background image for this level.
@@ -166,6 +166,17 @@ class MyGame(arcade.Window):
         file_path = os.path.dirname(os.path.abspath(__file__))
         os.chdir(file_path)
 
+        # Simple small toolbar, with either watering can or axe.
+        self.current_tool = "watering_can"  # Start with the watering can selected
+        self.hotbar_icons = {
+            "watering_can": ":resources:images/items/watering_can.png",
+            "axe": ":resources:images/items/axe.png"
+        }
+        self.hotbar_textures = {
+            "watering_can": arcade.load_texture(self.hotbar_icons["watering_can"]),
+            "axe": arcade.load_texture(self.hotbar_icons["axe"])
+        }
+
         # Sprite lists
         self.current_room = 0
 
@@ -221,6 +232,24 @@ class MyGame(arcade.Window):
         # If you have coins or monsters, then copy and modify the line
         # above for each list.
 
+        # Draw the hotbar at the bottom center of the screen
+        hotbar_x = SCREEN_WIDTH // 2
+        hotbar_y = 50  # Position at the bottom of the screen
+
+        for idx, tool in enumerate(self.hotbar_icons):
+            icon_x = hotbar_x + (idx - 0.5) * 80  # Adjust positions for multiple items
+
+            # Draw the icon
+            arcade.draw_texture_rectangle(
+                icon_x, hotbar_y,
+                50, 50,
+                self.hotbar_textures[tool]
+            )
+
+            # Highlight the selected tool
+            if tool == self.current_tool:
+                arcade.draw_rectangle_outline(icon_x, hotbar_y, 60, 60, arcade.color.YELLOW, 3)
+
         # Draw saplings
         self.rooms[self.current_room].sapling_list.draw()
 
@@ -238,6 +267,14 @@ class MyGame(arcade.Window):
         elif key == arcade.key.RIGHT:
             self.player_sprite.change_x = MOVEMENT_SPEED
 
+        # Switch tool with key press
+        if key == arcade.key.KEY_1:
+            self.current_tool = "watering_can"
+        elif key == arcade.key.KEY_2:
+            self.current_tool = "axe"
+
+        print(f"Selected tool: {self.current_tool}")
+
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
@@ -254,7 +291,7 @@ class MyGame(arcade.Window):
             distance_to_click = math.sqrt((x - sapling.center_x) ** 2 + (y - sapling.center_y) ** 2)
 
             # Check if sapling is within interaction range of the player and click
-            if distance_to_player < 80 and distance_to_click < 50:  # Adjust these values to tweak proximity
+            if distance_to_player < 80 and distance_to_click < 50:  # Adjust these values to tweak distance to sapling
                 saplings_hit.append(sapling)
 
         if saplings_hit:
@@ -266,6 +303,8 @@ class MyGame(arcade.Window):
                 # Change sapling state based on interaction
                 if sapling.state == "default":
                     sapling.state = "watered"
+                    if sapling.state == "watered":
+                        sapling.color = (0, 0, 255)
                     #sapling.texture = arcade.load_texture("path_to_watered_sapling_image.png")
                 elif sapling.state == "watered":
                     sapling.state = "chopped"
