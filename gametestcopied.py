@@ -35,6 +35,8 @@ class Room:
         # background images, you can delete this part.
         self.background = None
 
+        # Initialize sapling list, add this needed attribute to any room
+        self.sapling_list = arcade.SpriteList()
 
 def setup_room_1():
     """
@@ -72,12 +74,28 @@ def setup_room_1():
                 wall.left = x
                 wall.bottom = y
                 room.wall_list.append(wall)
+            
+    wall_positions = [
+        (1, 2), (1, 7), 
+        (2, 2), (2, 4), (2, 5), (2, 7),
+        (3, 2), (3, 3), (3, 4), (3, 7),
+        (4, 6), (4, 7),
+        (5, 1), (5, 2), (5, 3), (5, 4), (5, 6),
+        (6, 4), (6, 6), (6, 7),
+        (7, 1), (7, 3), (7, 4),
+        (8, 3), (8, 7),
+        (9, 2), (9, 3), (9, 4), (9, 5), (9, 7),
+        (10, 5), (10, 7),
+        (11, 2), (11, 4), (11, 5), (11, 7), (11, 8),
+        (12, 2)         
+    ]
 
-    wall = arcade.Sprite(":resources:images/tiles/boxCrate_double.png",
-                         SPRITE_SCALING)
-    wall.left = 7 * SPRITE_SIZE
-    wall.bottom = 5 * SPRITE_SIZE
-    room.wall_list.append(wall)
+    # Create the walls based on the positions
+    for pos in wall_positions:
+        wall = arcade.Sprite(":resources:images/tiles/boxCrate_double.png", SPRITE_SCALING)
+        wall.left = pos[0] * SPRITE_SIZE
+        wall.bottom = pos[1] * SPRITE_SIZE
+        room.wall_list.append(wall)
 
     # Add the sapling
     mushroom = arcade.Sprite(":resources:images/tiles/mushroomRed.png", SPRITE_SCALING)
@@ -90,7 +108,6 @@ def setup_room_1():
                                           "abstract_1.jpg")
 
     return room
-
 
 def setup_room_2():
     """
