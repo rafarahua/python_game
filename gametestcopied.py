@@ -21,6 +21,9 @@ SCREEN_TITLE = "Sprite Rooms Example"
 
 MOVEMENT_SPEED = 5
 
+total_saplings = 1
+sapling_counter = 0
+
 
 class Room:
     """
@@ -169,12 +172,12 @@ class MyGame(arcade.Window):
         # Simple small toolbar, with either watering can or axe.
         self.current_tool = "watering_can"  # Start with the watering can selected
         self.hotbar_icons = {
-            "watering_can": ":resources:images/items/watering_can.png",
-            "axe": ":resources:images/items/axe.png"
+            "watering_can": "textures/PPFE/tile_0026.png",
+            "shovel": "textures/PPFE/tile_0037.png"
         }
         self.hotbar_textures = {
             "watering_can": arcade.load_texture(self.hotbar_icons["watering_can"]),
-            "axe": arcade.load_texture(self.hotbar_icons["axe"])
+            "shovel": arcade.load_texture(self.hotbar_icons["shovel"])
         }
 
         # Sprite lists
@@ -185,6 +188,8 @@ class MyGame(arcade.Window):
         self.player_sprite = None
         self.player_list = None
         self.physics_engine = None
+
+        self.sapling_icon = arcade.load_texture(":resources:images/tiles/mushroomRed.png")
 
     def setup(self):
         """ Set up the game and initialize the variables. """
@@ -250,10 +255,36 @@ class MyGame(arcade.Window):
             if tool == self.current_tool:
                 arcade.draw_rectangle_outline(icon_x, hotbar_y, 60, 60, arcade.color.YELLOW, 3)
 
+            
+
         # Draw saplings
         self.rooms[self.current_room].sapling_list.draw()
 
         self.player_list.draw()
+
+        self.draw_sapling_counter()
+    
+    def draw_sapling_counter(self):
+        # Position to draw the icon and counter
+        icon_x = 30  # X position for the icon
+        icon_y = self.height - 10  # Y position for the icon
+
+        # Draw a background rectangle for the sapling count
+        box_width = 180  # Width of the box
+        box_height = 30  # Height of the box
+        box_x = icon_x - 20 + box_width / 2  # Centered box position
+        box_y = icon_y - 15  # Positioning the box with the text
+
+        # Draw the sapling icon
+        arcade.draw_texture_rectangle(icon_x + box_width*3/5, icon_y, 50, 50, self.sapling_icon)
+
+        arcade.draw_lrtb_rectangle_outline(box_x - box_width / 2, box_x + box_width / 2, 
+                                            box_y + box_height / 2, box_y - box_height / 2, 
+                                            arcade.color.WHITE)  # Draw the background box
+
+        # Draw the sapling count text
+        arcade.draw_text(f"Saplings       {sapling_counter}", 
+                        icon_x - 15, icon_y - 20, arcade.color.WHITE, 18)
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -270,10 +301,11 @@ class MyGame(arcade.Window):
         # Switch tool with key press
         if key == arcade.key.KEY_1:
             self.current_tool = "watering_can"
+            print(f"Selected tool: {self.current_tool}")
         elif key == arcade.key.KEY_2:
-            self.current_tool = "axe"
+            self.current_tool = "shovel"
+            print(f"Selected tool: {self.current_tool}")
 
-        print(f"Selected tool: {self.current_tool}")
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
@@ -301,17 +333,16 @@ class MyGame(arcade.Window):
                     sapling.state = "default"
 
                 # Change sapling state based on interaction
-                if sapling.state == "default":
-                    sapling.state = "watered"
-                    if sapling.state == "watered":
-                        sapling.color = (0, 0, 255)
+                if self.current_tool == "watering_can":
+                    sapling.state == "watered"
+                    sapling.color = (0, 0, 255)
                     #sapling.texture = arcade.load_texture("path_to_watered_sapling_image.png")
-                elif sapling.state == "watered":
-                    sapling.state = "chopped"
-                    #sapling.texture = arcade.load_texture("path_to_chopped_sapling_image.png")
+                if self.current_tool == "shovel":
+                    dig_sapling()
+                    sapling.state = "shoveled"
 
-                # Remove sapling if chopped
-                if sapling.state == "chopped":
+                # Remove sapling if shoveled
+                if sapling.state == "shoveled":
                     sapling.remove_from_sprite_lists()
 
     def on_update(self, delta_time):
@@ -346,6 +377,18 @@ def main():
     window.setup()
     arcade.run()
 
+def dig_sapling():
+    global sapling_counter
+    sapling_counter += 1
+    print(f"Saplings collected: {sapling_counter}")
+    
+    # Check if all saplings are collected
+    if sapling_counter == total_saplings:
+        unlock_next_stage()
+
+def unlock_next_stage():
+    print("You collected all saplings! The garden door unlocks.")
+    # Code to open the next area or transition to the garden area
 
 if __name__ == "__main__":
     main()
