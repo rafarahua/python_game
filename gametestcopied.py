@@ -24,6 +24,9 @@ MOVEMENT_SPEED = 5
 total_saplings = 1
 sapling_counter = 0
 
+total_saplings = 1
+sapling_counter = 0
+
 
 class Room:
     """
@@ -252,6 +255,17 @@ class MyGame(arcade.Window):
             "shovel": arcade.load_texture(self.hotbar_icons["shovel"])
         }
 
+        # Simple small toolbar, with either watering can or axe.
+        self.current_tool = "watering_can"  # Start with the watering can selected
+        self.hotbar_icons = {
+            "watering_can": "textures/PPFE/tile_0026.png",
+            "shovel": "textures/PPFE/tile_0037.png"
+        }
+        self.hotbar_textures = {
+            "watering_can": arcade.load_texture(self.hotbar_icons["watering_can"]),
+            "shovel": arcade.load_texture(self.hotbar_icons["shovel"])
+        }
+
         # Sprite lists
         self.current_room = 0
 
@@ -397,6 +411,15 @@ class MyGame(arcade.Window):
             print(f"Selected tool: {self.current_tool}")
 
 
+        # Switch tool with key press
+        if key == arcade.key.KEY_1:
+            self.current_tool = "watering_can"
+            print(f"Selected tool: {self.current_tool}")
+        elif key == arcade.key.KEY_2:
+            self.current_tool = "shovel"
+            print(f"Selected tool: {self.current_tool}")
+
+
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
@@ -506,6 +529,18 @@ def main():
     window.setup()
     arcade.run()
 
+def dig_sapling():
+    global sapling_counter
+    sapling_counter += 1
+    print(f"Saplings collected: {sapling_counter}")
+    
+    # Check if all saplings are collected
+    if sapling_counter == total_saplings:
+        unlock_next_stage()
+
+def unlock_next_stage():
+    print("You collected all saplings! The garden door unlocks.")
+    # Code to open the next area or transition to the garden area
 def dig_sapling():
     global sapling_counter
     sapling_counter += 1
