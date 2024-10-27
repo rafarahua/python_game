@@ -255,17 +255,6 @@ class MyGame(arcade.Window):
             "shovel": arcade.load_texture(self.hotbar_icons["shovel"])
         }
 
-        # Simple small toolbar, with either watering can or axe.
-        self.current_tool = "watering_can"  # Start with the watering can selected
-        self.hotbar_icons = {
-            "watering_can": "textures/PPFE/tile_0026.png",
-            "shovel": "textures/PPFE/tile_0037.png"
-        }
-        self.hotbar_textures = {
-            "watering_can": arcade.load_texture(self.hotbar_icons["watering_can"]),
-            "shovel": arcade.load_texture(self.hotbar_icons["shovel"])
-        }
-
         # Sprite lists
         self.current_room = 0
 
@@ -410,16 +399,6 @@ class MyGame(arcade.Window):
             self.current_tool = "shovel"
             print(f"Selected tool: {self.current_tool}")
 
-
-        # Switch tool with key press
-        if key == arcade.key.KEY_1:
-            self.current_tool = "watering_can"
-            print(f"Selected tool: {self.current_tool}")
-        elif key == arcade.key.KEY_2:
-            self.current_tool = "shovel"
-            print(f"Selected tool: {self.current_tool}")
-
-
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
@@ -430,21 +409,49 @@ class MyGame(arcade.Window):
 
     def on_mouse_press(self, x, y, button, modifiers):
         global sapling_counter
+        saplings_hit = []
 
         # Check if we can collect a sapling
+
         for sapling in self.rooms[self.current_room].sapling_list:
+            distance_to_player = math.sqrt((self.player_sprite.center_x - sapling.center_x) ** 2 + (self.player_sprite.center_y - sapling.center_y) ** 2)
+            distance_to_click = math.sqrt((x - sapling.center_x) ** 2 + (y - sapling.center_y) ** 2)
+
+            """for sapling in self.rooms[self.current_room].sapling_list:
             distance_to_player = math.sqrt(
                 (self.player_sprite.center_x - sapling.center_x) ** 2 +
                 (self.player_sprite.center_y - sapling.center_y) ** 2
             )
-
+    
             # If within collection range and sapling is "collected" state, add to inventory
             if distance_to_player < 80 and sapling.state == "collected":
                 self.sapling_inventory.append(sapling)
                 sapling.remove_from_sprite_lists()  # Remove from room
                 sapling_counter += 1  # Increase sapling count
                 print("Sapling collected!")
-                return  # Exit after collecting
+                return  # Exit after collecting"""
+
+            if distance_to_player < 80 and distance_to_click < 50:  # Adjust these values to tweak distance to sapling
+                saplings_hit.append(sapling)
+
+            if saplings_hit:
+                print("Sapling interacted with!")
+                for sapling in saplings_hit:
+                    if not hasattr(sapling, "state"):
+                        sapling.state = "default"
+
+                    # Change sapling state based on interaction
+                    if self.current_tool == "watering_can":
+                        sapling.state == "watered"
+                        sapling.color = (0, 0, 255)
+                        #sapling.texture = arcade.load_texture("path_to_watered_sapling_image.png")
+                    if self.current_tool == "shovel":
+                        dig_sapling()
+                        sapling.state = "shoveled"
+
+                    # Remove sapling if shoveled
+                    if sapling.state == "shoveled":
+                        sapling.remove_from_sprite_lists()
 
         # Check if we can plant a sapling on a dirt patch
         if sapling_counter > 0 and self.current_tool == "shovel":
@@ -454,7 +461,7 @@ class MyGame(arcade.Window):
                 )
 
                 # If within planting range, plant a sapling at this dirt patch
-                if distance_to_patch < 80 and not dirt_patch.is_planted:
+                if distance_to_patch < 10 and not dirt_patch.is_planted:
                     # Decrease sapling counter
                     sapling_counter -= 1
 
@@ -500,9 +507,6 @@ class MyGame(arcade.Window):
         self.physics_engine.update()
 
         saplings_hit = arcade.check_for_collision_with_list(self.player_sprite, self.rooms[self.current_room].sapling_list)
-
-        if saplings_hit:
-            print("Player is near a sapling! Press a key to interact.")
 
         if self.show_day_message:
             self.message_timer -= delta_time
