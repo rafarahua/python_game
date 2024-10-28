@@ -10,18 +10,22 @@ python -m arcade.examples.sprite_rooms
 import arcade
 import os
 import math
+import random
 
 SPRITE_SCALING = 0.5
 SPRITE_NATIVE_SIZE = 128
 SPRITE_SIZE = int(SPRITE_NATIVE_SIZE * SPRITE_SCALING)
 
-SCREEN_WIDTH = SPRITE_SIZE * 14
-SCREEN_HEIGHT = SPRITE_SIZE * 10
+maze_width = 14
+maze_height = 10
+
+SCREEN_WIDTH = SPRITE_SIZE * maze_width
+SCREEN_HEIGHT = SPRITE_SIZE * maze_height
 SCREEN_TITLE = "Sprite Rooms Example"
 
 MOVEMENT_SPEED = 5
 
-total_saplings = 1
+total_saplings = random.randint(1, 3)
 sapling_counter = 0
 
 
@@ -55,25 +59,34 @@ class Sapling(arcade.Sprite):
         self.image_grown = image_grown
         self.state = "collected"
         self.plant_position = None
+        self.dirt_patch = None
 
-    def plant(self, x, y):
+    def plant(self, x, y, dirt_patch):
         """Transition to 'planted' state and set position."""
         self.state = "planted"
         self.center_x = x
         self.center_y = y
+        self.dirt_patch = dirt_patch
         self.texture = arcade.load_texture(self.image_planted)
 
     def water(self):
         """Transition to 'watered' state and update the image."""
         if self.state == "planted":
+            #self.color = (0, 0, 255)
             self.state = "watered"
             self.texture = arcade.load_texture(self.image_watered)
+            if self.dirt_patch:
+                self.dirt_patch.water()
 
     def grow(self):
         """Transition to 'grown' state after watering and a 'day' passes."""
         if self.state == "watered":
+            #self.color = (255, 255, 255)
             self.state = "grown"
             self.texture = arcade.load_texture(self.image_grown)
+            self.scale *= 4.5
+            if self.dirt_patch:
+                self.dirt_patch.dry()
 
 class DirtPatch(arcade.Sprite):
     """A class for designated planting areas with no collision."""
@@ -83,6 +96,13 @@ class DirtPatch(arcade.Sprite):
         self.center_x = x
         self.center_y = y
         self.is_planted = False  # Track if this patch is occupied by a sapling
+
+    def water(self):
+        """Darken the patch to indicate it has been watered."""
+        self.color = (139, 69, 19)
+
+    def dry(self):
+        self.color = (255, 255, 255)
 
 class Bed(arcade.Sprite):
     """ A class for the bed. """
@@ -150,22 +170,33 @@ def setup_room_1():
         wall.bottom = pos[1] * SPRITE_SIZE
         room.wall_list.append(wall)
 
-    # Add the sapling
-    sapling = Sapling(":resources:images/tiles/mushroomRed.png",
-                      "textures/PPFE/tile_0075.png", #CHANGE IMAGES
-                      "textures/PPFE/tile_0075.png",
-                      "textures/PPFE/tile_0057.png", scale=SPRITE_SCALING)
-    sapling.center_x = 7 * SPRITE_SIZE + 30
-    sapling.center_y = 3 * SPRITE_SIZE - 15
-    room.sapling_list.append(sapling)
+
+    # Generate all positions in the maze
+    all_positions = [(x, y) for x in range(1, maze_width-1) for y in range(1, maze_height-1)]
+
+    # Remove wall positions to get open spaces
+    open_positions = [pos for pos in all_positions if pos not in wall_positions]
+
+    chosen_positions = random.sample(open_positions, total_saplings)
+    print(chosen_positions)
+
+    # Place saplings in open positions
+    for x, y in chosen_positions:
+        sapling = Sapling(
+            image_collected=":resources:images/tiles/mushroomRed.png",
+            image_planted="textures/PPFE/tile_0075.png",
+            image_watered="textures/PPFE/tile_0075.png",
+            image_grown="textures/PPFE/tile_0057.png",
+            scale=SPRITE_SCALING
+        )
+        # Position the sapling using the chosen coordinates
+        sapling.center_x = x * SPRITE_SIZE + 30  # Adjust offset if needed
+        sapling.center_y = y * SPRITE_SIZE + 50  # Adjust offset if needed
+        room.sapling_list.append(sapling)
 
     # Load the background image for this level.
     room.background = arcade.load_texture(":resources:images/backgrounds/"
                                           "abstract_1.jpg")
-
-    # Add the bed
-    bed = Bed(10.5 * SPRITE_SIZE, 8.5 * SPRITE_SIZE)  # Position the bed
-    room.bed_list.append(bed)
 
     return room
 
@@ -221,6 +252,10 @@ def setup_room_2():
         room.dirt_patch_list.append(dirt_patch)
 
     room.background = arcade.load_texture(":resources:images/backgrounds/abstract_2.jpg")
+
+    # Add the bed
+    bed = Bed(10.5 * SPRITE_SIZE, 8.5 * SPRITE_SIZE)  # Position the bed
+    room.bed_list.append(bed)
 
     return room
 
@@ -315,15 +350,12 @@ class MyGame(arcade.Window):
         # Draw the bed
         self.rooms[self.current_room].bed_list.draw()
 
-        # If you have coins or monsters, then copy and modify the line
-        # above for each list.
-
         # Draw the hotbar at the bottom center of the screen
         hotbar_x = SCREEN_WIDTH // 2
-        hotbar_y = 50  # Position at the bottom of the screen
+        hotbar_y = 30  # Position at the bottom of the screen
 
         for idx, tool in enumerate(self.hotbar_icons):
-            icon_x = hotbar_x + (idx - 0.5) * 80  # Adjust positions for multiple items
+            icon_x = hotbar_x + (idx - 0.5) * 65  # Adjust positions for multiple items
 
             # Draw the icon
             arcade.draw_texture_rectangle(
@@ -439,16 +471,19 @@ class MyGame(arcade.Window):
 
                     # Change sapling state based on interaction
                     if self.current_tool == "watering_can":
-                        sapling.state == "watered"
-                        sapling.color = (0, 0, 255)
+                        sapling.water()
+                        #sapling.state == "watered"
+                        #sapling.color = (0, 0, 255)
                         #sapling.texture = arcade.load_texture("path_to_watered_sapling_image.png")
-                    if self.current_tool == "shovel":
-                        dig_sapling()
-                        sapling.state = "shoveled"
-
-                    # Remove sapling if shoveled
-                    if sapling.state == "shoveled":
+                    if self.current_tool == "shovel" and sapling.state != "dug":
                         sapling.remove_from_sprite_lists()
+                        dig_sapling()
+                        saplings_hit.clear()
+                        #sapling.state = "dug"
+                        
+                    # Remove sapling if shoveled
+                    #if sapling.state == "shoveled":
+                    #    sapling.remove_from_sprite_lists()
 
         # Check if we can plant a sapling on a dirt patch
         if sapling_counter > 0 and self.current_tool == "shovel":
@@ -470,7 +505,7 @@ class MyGame(arcade.Window):
                         image_grown="textures/PPFE/tile_0057.png", 
                         scale=SPRITE_SCALING
                     )
-                    sapling.plant(dirt_patch.center_x, dirt_patch.center_y)
+                    sapling.plant(dirt_patch.center_x, dirt_patch.center_y, dirt_patch)
                     self.rooms[self.current_room].sapling_list.append(sapling)
                     dirt_patch.is_planted = True  # Mark patch as occupied
                     print("Sapling planted on dirt patch!")
@@ -492,6 +527,7 @@ class MyGame(arcade.Window):
 
     def grow_saplings(self):
         for sapling in self.rooms[self.current_room].sapling_list:
+            print(sapling.state)
             if sapling.state == "watered":
                 sapling.grow()
                 print("Sapling grew!")
@@ -530,18 +566,6 @@ def main():
     window.setup()
     arcade.run()
 
-def dig_sapling():
-    global sapling_counter
-    sapling_counter += 1
-    print(f"Saplings collected: {sapling_counter}")
-    
-    # Check if all saplings are collected
-    if sapling_counter == total_saplings:
-        unlock_next_stage()
-
-def unlock_next_stage():
-    print("You collected all saplings! The garden door unlocks.")
-    # Code to open the next area or transition to the garden area
 def dig_sapling():
     global sapling_counter
     sapling_counter += 1
