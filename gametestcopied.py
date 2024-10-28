@@ -251,7 +251,7 @@ def setup_room_2():
         dirt_patch = DirtPatch(position[0], position[1], scale=3)
         room.dirt_patch_list.append(dirt_patch)
 
-    room.background = arcade.load_texture(":resources:images/backgrounds/abstract_2.jpg")
+    room.background = arcade.load_texture("textures/Backgrounds/Grass.png")
 
     # Add the bed
     bed = Bed(10.5 * SPRITE_SIZE, 8.5 * SPRITE_SIZE)  # Position the bed
